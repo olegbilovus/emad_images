@@ -1,1 +1,132 @@
+import requests
+import re
+import random
+import spacy
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
 
+# Carica il modello di spacy per l'italiano
+nlp = spacy.load("it_core_news_lg")
+
+app = FastAPI()  # Inizializza l'app FastAPI
+
+
+# Modello Pydantic per validare l'input (la frase che l'utente invia)
+class SentenceInput(BaseModel):
+    sentence: str
+
+
+# Funzione per ottenere tutti i pittogrammi dall'API
+def fetch_pictograms():
+    url = "https://api.arasaac.org/v1/pictograms/all/it"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Errore {response.status_code} durante la richiesta all'API")
+        return []
+
+
+# Funzione per determinare il pronome soggetto dal verbo coniugato
+def get_pronoun_from_verb(verb_token):
+    pronomi = {
+        "1Sing": "io",
+        "2Sing": "tu",
+        "3Sing": "lui/lei",
+        "1Plur": "noi",
+        "2Plur": "voi",
+        "3Plur": "loro"
+    }
+
+    if verb_token.morph.get("Person") and verb_token.morph.get("Number"):
+        person = verb_token.morph.get("Person")[0]
+        number = verb_token.morph.get("Number")[0]
+        key = f"{person}{number}"
+        if key in pronomi:
+            return pronomi[key]
+
+    return None
+
+
+# Funzione per tokenizzare la frase, rimuovere le stopwords e aggiungere pronomi impliciti
+def preprocess_text(text):
+    text = re.sub(r"[,'.]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    doc = nlp(text.lower())  # Elabora la frase con spacy per ottenere POS e lemma
+    articoli = {"e", "a", "il", "lo", "l'", "la", "i", "gli", "le", "l", "si"}
+    stop_words = set(articoli)  # Rimuoviamo gli articoli dalle parole di ricerca immagine
+    filtered_tokens = [token for token in doc if token.text not in stop_words]
+
+    final_tokens = []
+    pronoun_found = False
+
+    for token in filtered_tokens:
+        # Aggiungi un pronome solamente se non già presente
+        if (token.pos_ not in "PRON") or (token.text not in [t.text for t in final_tokens]):
+            final_tokens.append(token)
+
+        if (token.pos_ == "PRON" and token.morph.get("PronType") == ["Prs"]) or (token.pos_ in ["NOUN", "PROPN"]):
+            pronoun_found = True
+
+        if token.pos_ in ["VERB", "AUX"]:
+            if not pronoun_found:
+                pronoun = get_pronoun_from_verb(token)
+                if pronoun:
+                    pronoun_token = nlp(pronoun)[0]
+                    # Aggiungi il pronome solo se non è già presente
+                    if pronoun_token.text not in [t.text for t in final_tokens]:
+                        final_tokens.append(pronoun_token)
+            pronoun_found = False
+
+    return final_tokens
+
+
+# Funzione per trovare immagini corrispondenti alle parole chiave, considerando il plurale
+def find_images_for_keywords(tokens, pictograms):
+    images_to_return = []
+    for token in tokens:
+        word = token.text
+        matching_images = []
+        # Cerca immagini per la parola originale
+        for pictogram in pictograms:
+            keywords = [kw['keyword'] for kw in pictogram['keywords']]
+            plurals = [kw.get('plural', '') for kw in pictogram['keywords']]  # Considera i plurali
+            # Cerca nella parola originale o nel plurale
+            if word in keywords or word in plurals:
+                image_url = f"https://api.arasaac.org/api/pictograms/{pictogram['_id']}"
+                matching_images.append(image_url)
+        # Se non trovi immagini, prova con la lemmatizzazione
+        if not matching_images:
+            lemma_word = token.lemma_
+
+            # Controlla se il lemma contiene uno spazio
+            lemma_token = lemma_word.split()[0]  # Separa il lemma in più token
+
+            for pictogram in pictograms:
+                keywords = [kw['keyword'] for kw in pictogram['keywords']]
+                plurals = [kw.get('plural', '') for kw in pictogram['keywords']]  # Considera i plurali
+
+                if lemma_token in keywords or lemma_token in plurals:
+                    image_url = f"https://api.arasaac.org/api/pictograms/{pictogram['_id']}"
+                    matching_images.append(image_url)
+
+        # Se ci sono immagini corrispondenti, scegli casualmente per ciascuna parola
+        if matching_images:
+            chosen_image = random.choice(matching_images)
+            images_to_return.append(chosen_image)
+
+    return images_to_return
+
+
+# Endpoint principale dell'API: accetta una frase e restituisce gli ID delle immagini corrispondenti
+@app.post("/get-images/")
+def get_images(input_data: SentenceInput):
+    pictograms = fetch_pictograms()  # Recupera i pittogrammi dall'API
+    tokens = preprocess_text(input_data.sentence)  # Preprocessa la frase
+    images = find_images_for_keywords(tokens, pictograms)  # Trova le immagini corrispondenti
+
+    # Estrai solo gli ID delle immagini
+    ids = [int(image_url.split("/")[-1]) for image_url in images]  # Converti gli ID in interi
+
+    return {"ids": ids}  # Restituisci solo gli ID come JSON
