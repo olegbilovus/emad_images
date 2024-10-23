@@ -12,9 +12,10 @@ nlp = spacy.load("it_core_news_lg")
 app = FastAPI()  # Inizializza l'app FastAPI
 
 
-# Modello Pydantic per validare l'input (la frase che l'utente invia)
+# Modello Pydantic per validare l'input (la frase che l'utente invia e il parametro di sensibilità)
 class SentenceInput(BaseModel):
     sentence: str
+    sensibility: bool  # Aggiungi il parametro 'sensibility' al modello
 
 
 # Funzione per ottenere tutti i pittogrammi dall'API
@@ -83,19 +84,26 @@ def preprocess_text(text):
 
 
 # Funzione per trovare immagini corrispondenti alle parole chiave, considerando il plurale
-def find_images_for_keywords(tokens, pictograms):
+def find_images_for_keywords(tokens, pictograms, sensibility):
     images_to_return = []
     for token in tokens:
         word = token.text
         matching_images = []
+        
         # Cerca immagini per la parola originale
         for pictogram in pictograms:
+            # Controllo aggiuntivo per sensibility e sex
+            if pictogram.get('sex') == True and sensibility == True:
+                continue  # Salta questa immagine se sex=True e sensibility=True
+
             keywords = [kw['keyword'] for kw in pictogram['keywords']]
             plurals = [kw.get('plural', '') for kw in pictogram['keywords']]  # Considera i plurali
+            
             # Cerca nella parola originale o nel plurale
             if word in keywords or word in plurals:
                 image_url = f"https://api.arasaac.org/api/pictograms/{pictogram['_id']}"
                 matching_images.append(image_url)
+
         # Se non trovi immagini, prova con la lemmatizzazione
         if not matching_images:
             lemma_word = token.lemma_
@@ -104,6 +112,10 @@ def find_images_for_keywords(tokens, pictograms):
             lemma_token = lemma_word.split()[0]  # Separa il lemma in più token
 
             for pictogram in pictograms:
+                # Controllo aggiuntivo per sensibility e sex
+                if pictogram.get('sex') == True and sensibility == True:
+                    continue  # Salta questa immagine se sex=True e sensibility=True
+
                 keywords = [kw['keyword'] for kw in pictogram['keywords']]
                 plurals = [kw.get('plural', '') for kw in pictogram['keywords']]  # Considera i plurali
 
@@ -124,9 +136,10 @@ def find_images_for_keywords(tokens, pictograms):
 def get_images(input_data: SentenceInput):
     pictograms = fetch_pictograms()  # Recupera i pittogrammi dall'API
     tokens = preprocess_text(input_data.sentence)  # Preprocessa la frase
-    images = find_images_for_keywords(tokens, pictograms)  # Trova le immagini corrispondenti
+    images = find_images_for_keywords(tokens, pictograms, input_data.sensibility)  # Trova le immagini corrispondenti
 
     # Estrai solo gli ID delle immagini
     ids = [int(image_url.split("/")[-1]) for image_url in images]  # Converti gli ID in interi
 
     return {"ids": ids}  # Restituisci solo gli ID come JSON
+
