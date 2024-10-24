@@ -15,8 +15,8 @@ app = FastAPI()  # Inizializza l'app FastAPI
 # Modello Pydantic per validare l'input (la frase che l'utente invia e il parametro di sensibilità)
 class SentenceInput(BaseModel):
     sentence: str
-    sensibility: bool  # Aggiungi il parametro 'sensibility' al modello
-
+    sexflag: bool  # Aggiungi il parametro 'sensibility' al modello
+    violenceflag: bool
 
 # Funzione per ottenere tutti i pittogrammi dall'API
 def fetch_pictograms():
@@ -84,21 +84,22 @@ def preprocess_text(text):
 
 
 # Funzione per trovare immagini corrispondenti alle parole chiave, considerando il plurale
-def find_images_for_keywords(tokens, pictograms, sensibility):
+def find_images_for_keywords(tokens, pictograms, sexflag, violenceflag):
     images_to_return = []
     for token in tokens:
         word = token.text
         matching_images = []
-        
+
         # Cerca immagini per la parola originale
         for pictogram in pictograms:
             # Controllo aggiuntivo per sensibility e sex
-            if pictogram.get('sex') == True and sensibility == True:
-                continue  # Salta questa immagine se sex=True e sensibility=True
+            if ((pictogram.get('sex') == True and sexflag == True) or
+                    (pictogram.get('violence') == True and violenceflag == True)):
+                continue  # Salta questa immagine se l'immagine non rispetta le sensibilità imposte
 
             keywords = [kw['keyword'] for kw in pictogram['keywords']]
             plurals = [kw.get('plural', '') for kw in pictogram['keywords']]  # Considera i plurali
-            
+
             # Cerca nella parola originale o nel plurale
             if word in keywords or word in plurals:
                 image_url = f"https://api.arasaac.org/api/pictograms/{pictogram['_id']}"
@@ -113,8 +114,9 @@ def find_images_for_keywords(tokens, pictograms, sensibility):
 
             for pictogram in pictograms:
                 # Controllo aggiuntivo per sensibility e sex
-                if pictogram.get('sex') == True and sensibility == True:
-                    continue  # Salta questa immagine se sex=True e sensibility=True
+                if ((pictogram.get('sex') == True and sexflag == True) or
+                        (pictogram.get('violence')==True and violenceflag == True)):
+                    continue  # Salta questa immagine se l'immagine non rispetta le sensibilità imposte
 
                 keywords = [kw['keyword'] for kw in pictogram['keywords']]
                 plurals = [kw.get('plural', '') for kw in pictogram['keywords']]  # Considera i plurali
@@ -136,10 +138,9 @@ def find_images_for_keywords(tokens, pictograms, sensibility):
 def get_images(input_data: SentenceInput):
     pictograms = fetch_pictograms()  # Recupera i pittogrammi dall'API
     tokens = preprocess_text(input_data.sentence)  # Preprocessa la frase
-    images = find_images_for_keywords(tokens, pictograms, input_data.sensibility)  # Trova le immagini corrispondenti
+    images = find_images_for_keywords(tokens, pictograms, input_data.sexflag, input_data.violenceflag)  # Trova le immagini corrispondenti
 
     # Estrai solo gli ID delle immagini
     ids = [int(image_url.split("/")[-1]) for image_url in images]  # Converti gli ID in interi
 
     return {"ids": ids}  # Restituisci solo gli ID come JSON
-
