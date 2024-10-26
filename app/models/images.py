@@ -17,6 +17,6 @@ class Sentence(ContentFilter):
     language: Language
 
 
-class Image(BaseModel):
+class Image(ContentFilter):
     id: int
     keyword: str

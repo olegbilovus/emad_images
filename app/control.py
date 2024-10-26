@@ -83,6 +83,8 @@ def get_pronoun_from_verb(verb_token):
 # Funzione per trovare immagini corrispondenti alle parole chiave, considerando il plurale
 def find_images_for_keywords(tokens, sex_flag, violence_flag) -> List[Image]:
     images = []
+
+    # If the first search fails, use the file as a fallback for all the other searches in the same request
     use_file = False
     for token in tokens:
         # Cerca immagini per la parola originale
@@ -121,20 +123,22 @@ def db_find_images_from_word(word, sex_flag, violence_flag) -> List[Image]:
     images = db[COLLECTION_NAME].find(
         # dict1 | dict2  will merge the dictionaries
         {"$or": [{"keywords.keyword": word}, {"keywords.plural": word}]} | sex | violence,
-        {"_id": 1})  # project to return only the _id field
+        {"_id": 1, "sex": 1, "violence": 1})  # project to return only the _id field
 
-    return [Image(id=image["_id"], keyword=word) for image in images]
+    return [Image(id=image["_id"], keyword=word, sex=image["sex"], violence=image["violence"]) for image in images]
 
 
 def file_find_images_from_word(word, sex_flag, violence_flag) -> List[Image]:
     matching_images = []
 
-    for pictogram in jsonData:
-        if pictogram["sex"] and sex_flag or pictogram["violence"] and violence_flag:
+    for image in jsonData:
+        if image["sex"] and sex_flag or image["violence"] and violence_flag:
             continue
-        for keyword in pictogram["keywords"]:
+        for keyword in image["keywords"]:
             if word == keyword["keyword"] or word == keyword.get("plural", ""):
-                matching_images.append(Image(id=pictogram["_id"], keyword=word))
+                matching_images.append(Image(id=image["_id"],
+                                             keyword=word, sex=image["sex"],
+                                             violence=image["violence"]))
                 break
 
     return matching_images
