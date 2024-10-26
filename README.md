@@ -1,0 +1,1 @@
+Core to find the images from a sentence.
