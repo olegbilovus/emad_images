@@ -10,6 +10,7 @@ from app.config import settings
 from app.models.images import Image
 
 nlp = spacy.load("it_core_news_lg")
+print(spacy.info())
 
 ARTICLES = ['a', 'e', 'gli', 'i', 'il', 'l', "l'", 'la', 'le', 'lo', 'si']
 

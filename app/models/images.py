@@ -8,8 +8,8 @@ class Language(str, Enum):
 
 
 class ContentFilter(BaseModel):
-    sex: bool = Field(True, description="Sexual content")
-    violence: bool = Field(True, description="Violent content")
+    sex: bool = Field(False, description="Filter out sexual content")
+    violence: bool = Field(False, description="Filter out violent content")
 
 
 class Sentence(ContentFilter):

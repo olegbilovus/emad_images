@@ -6,11 +6,11 @@ RUN apt-get update &&  \
     python -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
-ENV SPACY_MODEL="it_core_news_lg"
+ARG SPACY_MODEL="it_core_news_lg"
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt && \
-    python -m spacy download "$SPACY_MODEL" && \
+    python -m spacy download "${SPACY_MODEL}" && \
     python -m spacy info
 
 FROM python:3.12-slim
@@ -20,6 +20,8 @@ COPY --from=install-dependencies /opt/venv /opt/venv
 WORKDIR /app
 
 COPY ./app .
+
+ENV JSON_FILE="it.json"
 
 ENV PATH="/opt/venv/bin:$PATH"
 CMD ["fastapi", "run", "main.py", "--port", "80"]
