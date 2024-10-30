@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="coreApi" type="Python.FastAPI">
+  <configuration default="false" name="coreApi-it" type="Python.FastAPI">
     <option name="file" value="C:\Users\olgbl\Desktop\Unisa\EMAD\emad_images\app\main.py" />
     <module name="emad_images" />
     <option name="ENV_FILES" value="" />
