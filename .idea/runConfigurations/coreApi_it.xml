@@ -1,0 +1,25 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="coreApi-it" type="Python.FastAPI">
+    <option name="file" value="C:\Users\olgbl\Desktop\Unisa\EMAD\emad_images\app\main.py" />
+    <module name="emad_images" />
+    <option name="ENV_FILES" value="" />
+    <option name="INTERPRETER_OPTIONS" value="" />
+    <option name="PARENT_ENVS" value="true" />
+    <envs>
+      <env name="JSON_FILE" value="jsons/it.json" />
+      <env name="LANGUAGE" value="it" />
+      <env name="MONGODB_COLLECTION" value="pictograms" />
+      <env name="MONGODB_DATABASE" value="pictograms" />
+      <env name="MONGODB_URI" value="mongodb://377eb8ec01c85fa727c10c478f60c13f:25d055a16b3d1a40d7a90e46bee02ef3@localhost:27017" />
+    </envs>
+    <option name="SDK_HOME" value="$PROJECT_DIR$/.venv/Scripts/python.exe" />
+    <option name="SDK_NAME" value="Python 3.12 (emad_images)" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/app" />
+    <option name="IS_MODULE_SDK" value="false" />
+    <option name="ADD_CONTENT_ROOTS" value="true" />
+    <option name="ADD_SOURCE_ROOTS" value="true" />
+    <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+    <option name="launchJavascriptDebuger" value="false" />
+    <method v="2" />
+  </configuration>
+</component>

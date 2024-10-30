@@ -2,10 +2,11 @@ from typing import List, Annotated
 
 from fastapi import FastAPI, Query
 
+from app.config import settings
 from app.control import process_text, find_images_for_keywords
 from app.models.images import Sentence, Image
 
-app = FastAPI(docs_url="/", title="NLP API", version="1.0.0")
+app = FastAPI(docs_url="/", title=f"NLP API [{settings.language.name}]", version="1.0.0")
 
 
 @app.get("/v1/nlp/images/", tags=["nlp/images"], summary="Get images ids and keywords")

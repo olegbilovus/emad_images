@@ -21,7 +21,8 @@ WORKDIR /app
 
 COPY ./app .
 
-ENV JSON_FILE="it.json"
+ENV JSON_FILE="jsons/it.json"
+ENV LANGUAGE="it"
 
 ENV PATH="/opt/venv/bin:$PATH"
 CMD ["fastapi", "run", "main.py", "--port", "80"]

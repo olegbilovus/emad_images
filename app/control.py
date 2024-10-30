@@ -6,13 +6,12 @@ from typing import List
 import pymongo
 import spacy
 
-from app.config import settings
+from app.config import settings, STOP_WORDS_ALL, PRONOUMS_ALL, SPACY_MODELS
 from app.models.images import Image
 
-nlp = spacy.load("it_core_news_lg")
+nlp = spacy.load(SPACY_MODELS[settings.language])
 print(spacy.info())
-
-ARTICLES = ['a', 'e', 'gli', 'i', 'il', 'l', "l'", 'la', 'le', 'lo', 'si']
+print(f"Loaded model: {SPACY_MODELS[settings.language]}")
 
 DATABASE_NAME = settings.mongodb_database
 COLLECTION_NAME = settings.mongodb_collection
@@ -26,15 +25,17 @@ db = pymongo.MongoClient(settings.mongodb_uri,
 with open(settings.json_file, 'r', encoding="utf8") as f:
     jsonData = json.load(f)
 
+STOP_WORDS = STOP_WORDS_ALL[settings.language]
+
 
 # Funzione per tokenizzare la frase, rimuovere le stopwords e aggiungere pronomi impliciti
 # noinspection t
 def process_text(text: str):
-    p_text = re.sub(r"[,'.]", " ", text)
+    p_text = re.sub(r"[,.]", " ", text)
     p_text = re.sub(r"\s+", " ", p_text).strip().lower()
     doc = nlp(p_text)
-    # Rimuoviamo gli articoli dalle parole di ricerca immagine
-    filtered_tokens = [token for token in doc if token.text not in ARTICLES]
+    # Rimuoviamo le parole indesiderate dalla ricerca immagine
+    filtered_tokens = [token for token in doc if token.text not in STOP_WORDS]
 
     final_tokens = []
     pronoun_found = False
@@ -60,14 +61,7 @@ def process_text(text: str):
     return final_tokens
 
 
-PRONOUMS = {
-    "1Sing": "io",
-    "2Sing": "tu",
-    "3Sing": "lui/lei",
-    "1Plur": "noi",
-    "2Plur": "voi",
-    "3Plur": "loro"
-}
+PRONOUMS = PRONOUMS_ALL[settings.language]
 
 
 # Funzione per determinare il pronome soggetto dal verbo coniugato
@@ -117,12 +111,16 @@ def find_images_from_word_failover(word, sex_flag, violence_flag, use_file=False
         return file_find_images_from_word(word, sex_flag, violence_flag), True
 
 
+MONGODB_LANG_KEYWORD = f'keywords.{settings.language.name}.keyword'
+MONGODB_LANG_PLURAL = f'keywords.{settings.language.name}.plural'
+
+
 def db_find_images_from_word(word, sex_flag, violence_flag) -> List[Image]:
     sex = {"sex": False} if sex_flag else {}
     violence = {"violence": False} if violence_flag else {}
     images = db[COLLECTION_NAME].find(
         # dict1 | dict2  will merge the dictionaries
-        {"$or": [{"keywords.keyword": word}, {"keywords.plural": word}]} | sex | violence,
+        {"$or": [{MONGODB_LANG_KEYWORD: word}, {MONGODB_LANG_PLURAL: word}]} | sex | violence,
         {"_id": 1, "sex": 1, "violence": 1})  # project to return only the _id field
 
     return [Image(id=image["_id"], keyword=word, sex=image["sex"], violence=image["violence"]) for image in images]
