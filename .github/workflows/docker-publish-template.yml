@@ -36,5 +36,5 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          build-args: SPACY_MODEL="${{ inputs.SPACY_MODEL }}"
+          build-args: SPACY_MODEL=${{ inputs.SPACY_MODEL }}
           tags: ghcr.io/${{ github.repository }}:${{ inputs.LANG }}
