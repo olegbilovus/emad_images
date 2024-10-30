@@ -6,7 +6,8 @@
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
-      <env name="JSON_FILE" value="it.json" />
+      <env name="JSON_FILE" value="jsons/it.json" />
+      <env name="LANGUAGE" value="it" />
       <env name="MONGODB_COLLECTION" value="pictograms" />
       <env name="MONGODB_DATABASE" value="pictograms" />
       <env name="MONGODB_URI" value="mongodb://377eb8ec01c85fa727c10c478f60c13f:25d055a16b3d1a40d7a90e46bee02ef3@localhost:27017" />

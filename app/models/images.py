@@ -1,10 +1,4 @@
-from enum import Enum
-
 from pydantic import BaseModel, Field
-
-
-class Language(str, Enum):
-    it = "it"
 
 
 class ContentFilter(BaseModel):
@@ -14,7 +8,6 @@ class ContentFilter(BaseModel):
 
 class Sentence(ContentFilter):
     text: str
-    language: Language
 
 
 class Image(ContentFilter):
