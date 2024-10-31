@@ -25,7 +25,7 @@ SPACY_MODELS = {
 
 STOP_WORDS_ALL = {
     "it": ['a', 'e', 'gli', 'i', 'il', 'l', "l'", 'la', 'le', 'lo', 'si'],
-    "en": ['a', 'an', 'the']
+    "en": ['a', 'an', 'the', 'let']
 }
 
 PRONOUMS_ALL = {

@@ -96,6 +96,8 @@ def find_images_for_keywords(tokens, sex_flag, violence_flag) -> List[Image]:
         if token_images:
             # Se ci sono immagini corrispondenti, scegli casualmente per ciascuna parola
             images.append(random.choice(token_images))
+        else:
+            images.append(Image(id=-1, keyword=token.text, sex=False, violence=False))
 
     return images
 
