@@ -14,6 +14,7 @@ jobs:
     uses: ./.github/workflows/docker-publish-template.yml
     with:
       SPACY_MODEL: en_core_web_lg
+      MBART_MODEL: MRNH/mbart-english-grammar-corrector
       LANG: en
   it-build-and-push-image:
     permissions:
@@ -22,4 +23,5 @@ jobs:
     uses: ./.github/workflows/docker-publish-template.yml
     with:
       SPACY_MODEL: it_core_news_lg
+      MBART_MODEL: MRNH/mbart-italian-grammar-corrector
       LANG: it

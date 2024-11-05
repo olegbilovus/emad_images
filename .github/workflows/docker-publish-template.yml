@@ -6,6 +6,9 @@ on:
       SPACY_MODEL:
         required: true
         type: string
+      MBART_MODEL:
+        required: true
+        type: string
       LANG:
         required: true
         type: string
@@ -36,5 +39,7 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          build-args: SPACY_MODEL=${{ inputs.SPACY_MODEL }}
+          build-args: |
+            SPACY_MODEL=${{ inputs.SPACY_MODEL }}
+            MBART_MODEL=${{ inputs.MBART_MODEL }}
           tags: ghcr.io/${{ github.repository }}:${{ inputs.LANG }}
