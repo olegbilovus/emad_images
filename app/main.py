@@ -3,7 +3,7 @@ from typing import List, Annotated
 from fastapi import FastAPI, Query
 
 from app.config import settings
-from app.control import process_text, find_images_for_keywords
+from app.control import process_text, find_images_for_keywords, correct_text_contextual
 from app.models.images import Sentence, Image
 
 app = FastAPI(docs_url="/", title=f"NLP API [{settings.language.name}]", version="1.0.0")
