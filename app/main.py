@@ -11,8 +11,7 @@ app = FastAPI(docs_url="/", title=f"NLP API [{settings.language.name}]", version
 
 @app.get("/v1/nlp/images/", tags=["nlp/images"], summary="Get images ids and keywords")
 def get_images(sentence: Annotated[Sentence, Query()]) -> List[Image]:
-    corrected_text = correct_text_contextual(sentence.text)
-    tokens = process_text(corrected_text)  # Preprocessa la frase
+    tokens = process_text(sentence.text)  # Preprocessa la frase
     images = find_images_for_keywords(tokens, sentence.sex, sentence.violence)  # Trova le immagini corrispondenti
 
     return images
