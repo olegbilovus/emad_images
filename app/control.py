@@ -2,20 +2,17 @@ import json
 import random
 import re
 from typing import List
-
+from transformers import pipeline
 import pymongo
 import spacy
-from transformers import pipeline
 
-from app.config import settings, STOP_WORDS_ALL, PRONOUMS_ALL, SPACY_MODELS, MBART_MODEL
+from app.config import settings, STOP_WORDS_ALL, PRONOUMS_ALL, SPACY_MODELS
 from app.models.images import Image
 
 nlp = spacy.load(SPACY_MODELS[settings.language])
+corrector = pipeline("text2text-generation", model="MRNH/mbart-italian-grammar-corrector")
 print(spacy.info())
 print(f"Loaded model: {SPACY_MODELS[settings.language]}")
-
-corrector = pipeline("text2text-generation", model=MBART_MODEL[settings.language])
-print(f"Loaded model: {MBART_MODEL[settings.language]}")
 
 DATABASE_NAME = settings.mongodb_database
 COLLECTION_NAME = settings.mongodb_collection
@@ -38,8 +35,6 @@ def correct_text_contextual(text):
     correction = corrector(text, max_length=100, num_return_sequences=1)
     corrected_text = correction[0]['generated_text']  # Estrai il testo corretto
     return corrected_text
-
-
 # Funzione per tokenizzare la frase, rimuovere le stopwords e aggiungere pronomi impliciti
 # noinspection t
 def process_text(text: str):

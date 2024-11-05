@@ -23,11 +23,6 @@ SPACY_MODELS = {
     "en": "en_core_web_lg"
 }
 
-MBART_MODEL = {
-    "it": "MRNH/mbart-italian-grammar-corrector",
-    "en": "MRNH/mbart-english-grammar-corrector"
-}
-
 STOP_WORDS_ALL = {
     "it": ['a', 'e', 'gli', 'i', 'il', 'l', "l'", 'la', 'le', 'lo', 'si'],
     "en": ['a', 'an', 'the', 'let']
