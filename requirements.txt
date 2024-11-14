@@ -1,7 +1,7 @@
 fastapi[standard]~=0.115.2
 pydantic~=2.9.2
 pydantic-settings~=2.6.0
-spacy~=3.8.2
+spacy~=3.7.6
 bcrypt~=4.2.0
 pymongo~=4.10.1
 dnspython~=2.7.0

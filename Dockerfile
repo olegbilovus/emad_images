@@ -1,21 +1,17 @@
-FROM python:3.12-slim AS install-dependencies
+FROM condaforge/mambaforge:24.9.2-0 AS conda
 
-RUN apt-get update &&  \
-    apt-get install -y --no-install-recommends build-essential gcc && \
-    apt-get clean && \
-    python -m venv /opt/venv
+COPY environment.yml .
+RUN conda env create --prefix /opt/venv -f environment.yml
 
 ENV PATH="/opt/venv/bin:$PATH"
 ARG SPACY_MODEL="it_core_news_lg"
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt && \
-    python -m spacy download "${SPACY_MODEL}" && \
+RUN python -m spacy download "${SPACY_MODEL}" && \
     python -m spacy info
 
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-COPY --from=install-dependencies /opt/venv /opt/venv
+COPY --from=conda /opt/venv /opt/venv
 
 WORKDIR /app
 
