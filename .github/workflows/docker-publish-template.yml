@@ -30,7 +30,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push amd64 image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -38,3 +38,12 @@ jobs:
           push: true
           build-args: SPACY_MODEL=${{ inputs.SPACY_MODEL }}
           tags: ghcr.io/${{ github.repository }}:${{ inputs.LANG }}
+
+      - name: Build and push arm64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          build-args: SPACY_MODEL=${{ inputs.SPACY_MODEL }}
+          tags: ghcr.io/${{ github.repository }}:${{ inputs.LANG }}-arm64
