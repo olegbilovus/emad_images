@@ -38,25 +38,37 @@ def process_text(text: str):
     filtered_tokens = [token for token in doc if token.text not in STOP_WORDS]
 
     final_tokens = []
-    pronoun_found = False
+    global_subject_found = False  # Indica se è stato trovato un soggetto esplicito nella frase
 
+    # Passo 1: Identifica se esiste un soggetto esplicito in tutta la frase
     for token in filtered_tokens:
-        # Aggiungi un pronome solamente se non già presente
-        if token.pos_ != "PRON" or token.text not in [t.text for t in final_tokens]:
+        if token.dep_ in ["nsubj", "nsubj:pass"] and token.pos_ in ["NOUN", "PROPN", "PRON"]:
+            global_subject_found = True
+            break  # Non serve continuare, abbiamo trovato un soggetto esplicito
+
+    # Passo 2: Elabora i token e aggiungi pronomi impliciti solo se necessario
+    for token in filtered_tokens:
+        # Aggiungi il token ai final_tokens
+        if token.pos_ not in "PRON" or token.text not in [t.text for t in final_tokens]:
             final_tokens.append(token)
 
-        if (token.pos_ == "PRON" and token.morph.get("PronType") == ["Prs"]) or (token.pos_ in ["NOUN", "PROPN"]):
-            pronoun_found = True
-
+        # Gestione dei verbi
         if token.pos_ in ["VERB", "AUX"]:
-            if not pronoun_found:
-                pronoun = get_pronoun_from_verb(token)
-                if pronoun:
-                    pronoun_token = nlp(pronoun)[0]
-                    # Aggiungi il pronome solo se non è già presente
-                    if pronoun_token.text not in [t.text for t in final_tokens]:
-                        final_tokens.append(pronoun_token)
-            pronoun_found = False
+            # Controlla se il verbo ha un soggetto nelle sue dipendenze
+            has_subject_in_dependencies = any(
+                child.dep_ in ["nsubj", "nsubj:pass"] and child.pos_ in ["NOUN", "PROPN", "PRON"]
+                for child in token.children
+            )
+            # Se il soggetto è trovato globalmente o nelle dipendenze, non aggiungere un pronome implicito
+            if global_subject_found or has_subject_in_dependencies:
+                continue
+            # Se non c'è un soggetto esplicito, aggiungi il pronome implicito
+            pronoun = get_pronoun_from_verb(token)
+            if pronoun:
+                pronoun_token = nlp(pronoun)[0]
+                if pronoun_token.text not in [t.text for t in final_tokens]:
+                    final_tokens.append(pronoun_token)
+
 
     return final_tokens
 
