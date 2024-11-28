@@ -9,6 +9,11 @@ from app.models.images import Sentence, Image
 app = FastAPI(docs_url="/", title=f"NLP API [{settings.language.name}]", version="1.0.0")
 
 
+@app.get("/health", tags=["health"], summary="Health check", include_in_schema=False)
+async def health_check():
+    return {"status": "healthy"}
+
+
 @app.get("/v1/nlp/images/", tags=["nlp/images"], summary="Get images ids and keywords")
 def get_images(sentence: Annotated[Sentence, Query()]) -> List[Image]:
     tokens = process_text(sentence.text)  # Preprocessa la frase
