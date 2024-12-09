@@ -7,7 +7,7 @@ import pymongo
 import spacy
 
 from app.config import settings, STOP_WORDS_ALL, PRONOUMS_ALL, SPACY_MODELS
-from app.models.images import Image
+from app.models.images import KeywordImages, Image
 
 nlp = spacy.load(SPACY_MODELS[settings.language])
 print(spacy.info())
@@ -69,7 +69,6 @@ def process_text(text: str):
                 if pronoun_token.text not in [t.text for t in final_tokens]:
                     final_tokens.append(pronoun_token)
 
-
     return final_tokens
 
 
@@ -87,7 +86,7 @@ def get_pronoun_from_verb(verb_token):
 
 
 # Funzione per trovare immagini corrispondenti alle parole chiave, considerando il plurale
-def find_images_for_keywords(tokens, sex_flag, violence_flag) -> List[Image]:
+def find_images_for_keywords(tokens, sex_flag, violence_flag, one_image=True) -> List[KeywordImages]:
     images = []
 
     # If the first search fails, use the file as a fallback for all the other searches in the same request
@@ -97,7 +96,7 @@ def find_images_for_keywords(tokens, sex_flag, violence_flag) -> List[Image]:
         token_images, use_file = find_images_from_word_failover(token.text, sex_flag, violence_flag, use_file)
 
         # Se non trovi immagini, prova con la lemmatizzazione
-        if not token_images:
+        if not token_images.images:
             lemma_word = token.lemma_
 
             # Controlla se il lemma contiene uno spazio
@@ -105,16 +104,18 @@ def find_images_for_keywords(tokens, sex_flag, violence_flag) -> List[Image]:
 
             token_images, use_file = find_images_from_word_failover(lemma_token, sex_flag, violence_flag, use_file)
 
-        if token_images:
-            # Se ci sono immagini corrispondenti, scegli casualmente per ciascuna parola
-            images.append(random.choice(token_images))
+        if token_images.images:
+            if one_image:
+                token_images.images = [random.choice(token_images.images)]
+
+            images.append(token_images)
         else:
-            images.append(Image(id=-1, keyword=token.text, sex=False, violence=False))
+            images.append(KeywordImages(keyword=token.text, images=[]))
 
     return images
 
 
-def find_images_from_word_failover(word, sex_flag, violence_flag, use_file=False) -> (List[Image], bool):
+def find_images_from_word_failover(word, sex_flag, violence_flag, use_file=False) -> (KeywordImages, bool):
     try:
         if not use_file:
             return db_find_images_from_word(word, sex_flag, violence_flag), False
@@ -129,28 +130,33 @@ MONGODB_LANG_KEYWORD = f'keywords.{settings.language.name}.keyword'
 MONGODB_LANG_PLURAL = f'keywords.{settings.language.name}.plural'
 
 
-def db_find_images_from_word(word, sex_flag, violence_flag) -> List[Image]:
+def db_find_images_from_word(word, sex_flag, violence_flag) -> KeywordImages:
     sex = {"sex": False} if sex_flag else {}
     violence = {"violence": False} if violence_flag else {}
     images = db[COLLECTION_NAME].find(
-        # dict1 | dict2  will merge the dictionaries
+        # dict1 | dict2 will merge the dictionaries
         {"$or": [{MONGODB_LANG_KEYWORD: word}, {MONGODB_LANG_PLURAL: word}]} | sex | violence,
-        {"_id": 1, "sex": 1, "violence": 1})  # project to return only the _id field
+        {"_id": 1, "sex": 1, "violence": 1})  # project to return only the necessary fields
 
-    return [Image(id=image["_id"], keyword=word, sex=image["sex"], violence=image["violence"]) for image in images]
+    keyword_images = KeywordImages(keyword=word, images=[])
+    if images:
+        keyword_images.images = [Image(id=image["_id"], sex=image["sex"], violence=image["violence"]) for image in
+                                 images]
+
+    return keyword_images
 
 
-def file_find_images_from_word(word, sex_flag, violence_flag) -> List[Image]:
-    matching_images = []
+def file_find_images_from_word(word, sex_flag, violence_flag) -> KeywordImages:
+    keyword_images = KeywordImages(keyword=word, images=[])
 
     for image in jsonData:
         if image["sex"] and sex_flag or image["violence"] and violence_flag:
             continue
         for keyword in image["keywords"]:
             if word == keyword["keyword"] or word == keyword.get("plural", ""):
-                matching_images.append(Image(id=image["_id"],
-                                             keyword=word, sex=image["sex"],
-                                             violence=image["violence"]))
+                keyword_images.images.append(Image(id=image["_id"],
+                                                   sex=image["sex"],
+                                                   violence=image["violence"]))
                 break
 
-    return matching_images
+    return keyword_images

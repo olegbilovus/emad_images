@@ -8,8 +8,13 @@ class ContentFilter(BaseModel):
 
 class Sentence(ContentFilter):
     text: str
+    one_image: bool = Field(True, description="Return only one image per keyword")
 
 
 class Image(ContentFilter):
     id: int
+
+
+class KeywordImages(BaseModel):
     keyword: str
+    images: list[Image]
