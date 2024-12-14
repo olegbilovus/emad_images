@@ -9,7 +9,7 @@ ARG SPACY_MODEL="it_core_news_lg"
 RUN python -m spacy download "${SPACY_MODEL}" && \
     python -m spacy info
 
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 RUN useradd -m app && \
     apt-get update &&  \
